@@ -1,0 +1,148 @@
+// ========================================================================
+// DigiLead: Smart EdTech Hub - Database Architecture (Prisma ORM Schema)
+// SQLite Relational Schema for MTT Directors Digital Competency Hub
+// ========================================================================
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------------
+// 1. USERS (Foydalanuvchilar jadvali)
+// ------------------------------------------------------------------------
+model User {
+  id                    String                @id @default(uuid())
+  fullName              String                @map("full_name")
+  email                 String                @unique
+  passwordHash          String                @map("password_hash")
+  role                  String                @default("director")
+  organizationId        String                @map("organization_id")
+  organizationName      String                @map("organization_name")
+  digitalReadinessLevel String                @default("beginner") @map("digital_readiness_level")
+  phoneNumber           String?               @map("phone_number")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  // Munosabatlar (Relations)
+  indicators            DigitalIndicators12[]
+  toolLogs              ToolUsageLog[]
+  actionPlans           DigitalActionPlan[]
+  auditResponses        AuditResponse[]
+
+  @@index([role])
+  @@index([organizationId])
+  @@map("users")
+}
+
+// ------------------------------------------------------------------------
+// 2. DIGITAL_INDICATORS_12 (12 ta asosiy axborot indikatorlari jadvali)
+// ------------------------------------------------------------------------
+model DigitalIndicators12 {
+  id                        String              @id @default(uuid())
+  userId                    String              @map("user_id")
+  evaluationPeriod          String              @map("evaluation_period") // Masalan: "2026-Q1"
+
+  // 12 ta Ko'rsatkich (0 dan 100 gacha shkala)
+  cloudComputingUsage       Int                 @default(0) @map("cloud_computing_usage")
+  dataDrivenDecisions       Int                 @default(0) @map("data_driven_decisions")
+  edtechIntegration         Int                 @default(0) @map("edtech_integration")
+  cybersecurityAwareness    Int                 @default(0) @map("cybersecurity_awareness")
+  digitalCommunication      Int                 @default(0) @map("digital_communication")
+  digitalMonitoring         Int                 @default(0) @map("digital_monitoring")
+  resourceDigitization      Int                 @default(0) @map("resource_digitization")
+  aiAutomationAdoption      Int                 @default(0) @map("ai_automation_adoption")
+  digitalEthics             Int                 @default(0) @map("digital_ethics")
+  lmsNavigation             Int                 @default(0) @map("lms_navigation")
+  digitalTroubleshooting    Int                 @default(0) @map("digital_troubleshooting")
+  continuousDigitalLearning Int                 @default(0) @map("continuous_digital_learning")
+
+  totalDigitalScore         Int                 @default(0) @map("total_digital_score")
+  initialDigitalScore       Int                 @default(0) @map("initial_digital_score")
+  initialIndicatorsJson     String?             @map("initial_indicators_json") // JSON string to hold initial 12 scores
+
+  // 4 Main Criteria
+  intellectScore            Int                 @default(0) @map("intellect_score")
+  infoScore                 Int                 @default(0) @map("info_score")
+  creativeScore             Int                 @default(0) @map("creative_score")
+  teamScore                 Int                 @default(0) @map("team_score")
+
+  createdAt                 DateTime            @default(now()) @map("created_at")
+
+  // Foreign keys
+  user                      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionPlans               DigitalActionPlan[]
+
+  @@unique([userId, evaluationPeriod])
+  @@index([userId])
+  @@map("digital_indicators_12")
+}
+
+// ------------------------------------------------------------------------
+// 3. TOOL_USAGE_LOGS (Raqamli vositalardan foydalanish statistikasi)
+// ------------------------------------------------------------------------
+model ToolUsageLog {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  toolName       String    @map("tool_name")
+  usageFrequency Int       @default(1) @map("usage_frequency") // Haftalik faollik soni
+  actionType     String    @map("action_type") // Json string formatida saqlanadi
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, toolName])
+  @@map("tool_usage_logs")
+}
+
+// ------------------------------------------------------------------------
+// 4. DIGITAL_ACTION_PLANS (Shaxsiy Raqamli Rivojlanish Dasturi)
+// ------------------------------------------------------------------------
+model DigitalActionPlan {
+  id                   String               @id @default(uuid())
+  userId               String               @map("user_id")
+  generatedBasedOnKpiId String              @map("generated_based_on_kpi_id")
+
+  week1Tasks           String               @map("week_1_tasks") // Json string formatida
+  week2Tasks           String               @map("week_2_tasks")
+  week3Tasks           String               @map("week_3_tasks")
+  week4Tasks           String               @map("week_4_tasks")
+
+  week1TestScore       Int?                 @map("week_1_test_score")
+  week2TestScore       Int?                 @map("week_2_test_score")
+  week3TestScore       Int?                 @map("week_3_test_score")
+  week4TestScore       Int?                 @map("week_4_test_score")
+
+  progressStatus       String               @default("not_started") @map("progress_status")
+  targetWeakIndicators String               @map("target_weak_indicators") // Json string formatida
+  aiReasoning          String?              @map("ai_reasoning")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kpiSnapshot          DigitalIndicators12  @relation(fields: [generatedBasedOnKpiId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("digital_action_plans")
+}
+
+// ------------------------------------------------------------------------
+// 5. AUDIT_RESPONSES (O'z-o'zini baholash va Case-study javoblari)
+// ------------------------------------------------------------------------
+model AuditResponse {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  caseId           String   @map("case_id")
+  selectedOptionId String   @map("selected_option_id")
+  awardedScore     Int      @map("awarded_score")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("audit_responses")
+}

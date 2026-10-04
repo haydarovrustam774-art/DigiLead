@@ -1,0 +1,6 @@
+{
+  "name": "DigiLead: Smart EdTech Hub",
+  "description": "Maktabgacha ta'lim tashkilotlari (MTT) rahbarlarining axborot kompetensiyasini rivojlantirish, texnofobiyani yengish va raqamli monitoring platformasi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
